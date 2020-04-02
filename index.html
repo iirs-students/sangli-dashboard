@@ -2,7 +2,7 @@
 <html>
 <head>
 
-	<title>Quick Start - Leaflet</title>
+	<title>Sangli COVID19 Dashboard</title>
 
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,8 +16,20 @@
 
 </head>
 <body>
-
-
+<style>
+/* Legend at bottom right corner */
+.legend {
+		line-height: 18px;
+		color: #555;
+}
+.legend i {
+		width: 18px;
+		height: 18px;
+		float: left;
+		margin-right: 8px;
+		opacity: 0.7;
+}
+</style>
 
 <div id="mapid" style="width: 1300px; height: 1000px;"></div>
 <script type="text/javascript" src="sangli_villages.js"></script>
@@ -26,20 +38,92 @@
 
 <script>
 
+// https://leafletjs.com/examples/choropleth/
+// Choropleth map style
+function getColor(d) {
+	return d > 50 ? '#800026' :
+			d > 25  ? '#BD0026' :
+			d > 20  ? '#E31A1C' :
+			d > 15  ? '#FC4E2A' :
+			d > 10   ? '#FD8D3C' :
+			d > 5   ? '#FEB24C' :
+			d == 0  ? ' #ffffff00' :
+						'#FFEDA0';
+}
+function vb_style(feature) {
+	return {
+		weight: 0.5,
+		opacity: 1,
+		color: 'white',
+fillOpacity: .5,
+		fillColor: getColor(feature.properties["No_of_case"])
+	};
+}
+  //styles
+  function db_style(feature) {
+    return {
+      weight: 2,
+      opacity: 1,
+      color: 'red',
+  fillOpacity: 0,
+      fillColor: '#FEB24C'
+    };
+  }
+  function tb_style(feature) {
+    return {
+      weight: 2,
+      opacity: 1,
+      color: 'blue',
+  fillOpacity: 0,
+      fillColor: '#FEB24C'
+    };
+  }
+  // Layers
 	var map = L.map('mapid').setView([17.106539456796153, 74.80713628712856], 10);
-
-	var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png?{foo}', {foo: 'bar', attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'}).addTo(map);
-
-  var villages = L.geoJSON(village).addTo(map);
+	var dark = L.tileLayer('https://api.mapbox.com/styles/v1/venkanna37/cjkbhws3rc1yn2rnvmxatun03/tiles/256/{z}/{x}/{y}?access_token=pk.eyJ1IjoidmVua2FubmEzNyIsImEiOiJjamduajFicHQwYzJrMnFvZ2o1NWlrNjVxIn0.4OzLfdbG_MSBuMpFcAoQjg', {
+attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+}).addTo(map);
+	var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png?{foo}', {foo: 'bar', attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'});
+  var village = L.geoJSON(village, {
+		style:vb_style
+	}).addTo(map);
+  var taluka = L.geoJSON(taluka, {
+    style:tb_style
+  }).addTo(map);
+  var district = L.geoJSON(district, {
+    style: db_style
+  }).addTo(map);
 
   //Layer group
   var baseMaps ={
-      "Mapbox streets":mapbox
+      "OpenStreetMap":osm,
+			"Mapbox Dark Theme": dark
     };
   var overlayMaps ={
-      "Village Boundaries":villages
+      "Village Boundaries":village,
+      "Taluka Boundaries": taluka,
+      "District Boundary": district
     };
   L.control.layers(baseMaps,overlayMaps).addTo(map);
+
+	var legend = L.control({position: 'bottomright'});
+
+	// Legend
+	legend.onAdd = function (map) {
+				var div = L.DomUtil.create('div', 'info legend'),
+						grades = [0, 5, 10, 15, 20, 25, 50],
+						labels = [];
+		div.innerHTML += '<h2>Legend</h2><p>Number of Active Cases</p>';
+				// loop through our density intervals and generate a label with a colored square for each interval
+				for (var i = 0; i < grades.length; i++) {
+						div.innerHTML +=
+								'<div style="width:100%; white-space:nowrap; float:left;"><i style="background:' + getColor(grades[i] + 1) + '"></i> ' +
+								grades[i] + (grades[i + 1] ? '&ndash;'+grades[i + 1] + '<br>': '+')+'</div>';
+				}
+
+				return div;
+		};
+    legend.addTo(map);
 </script>
 
 
